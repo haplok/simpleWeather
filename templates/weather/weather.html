@@ -1,0 +1,214 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(to right, #6dd5fa, #2980b9);
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            position: relative;
+            width: 100%;
+        }
+        form input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        form button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #2980b9;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            align-self: center;
+        }
+        form button:hover {
+            background-color: #1e6f92;
+        }
+        .suggestions-box {
+            border: 0 solid #ccc;
+            border-top: none;
+            width: 200px;
+            background-color: white;
+            top: -100px;
+            left: 75%;
+            z-index: 1000;
+            border-radius: 0 4px 4px 4px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            position: relative;
+
+        }
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .suggestion-item:hover {
+            background-color: #f0f0f0;
+        }
+        .weather-info {
+            text-align: center;
+        }
+        .weather-info h2 {
+            margin: 20px 0 10px;
+            color: #333;
+        }
+        .weather-info p {
+            margin: 5px 0;
+            color: #555;
+        }
+        .forecast {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .forecast-row {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .forecast-item {
+            background-color: #e7f3fe;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            flex: 1;
+            margin-right: 10px;
+            max-width: 30%;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .forecast-item:last-child {
+            margin-right: 0;
+        }
+        .last-city {
+            text-align: center;
+            margin-top: 20px;
+            color: #777;
+        }
+        .error-message {
+            color: red;
+            text-align: center;
+            margin: 10px 0;
+        }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const cityInput = document.getElementById("id_city");
+            const suggestionsBox = document.getElementById("suggestions-box");
+
+            const suggestions = {{ cities|safe }};
+
+            cityInput.addEventListener("input", function() {
+                const value = this.value.toLowerCase();
+                suggestionsBox.innerHTML = "";
+
+                if (value) {
+                    const filteredSuggestions = suggestions.filter(city => city.toLowerCase().startsWith(value));
+                    filteredSuggestions.forEach(city => {
+                        const suggestionItem = document.createElement("div");
+                        suggestionItem.textContent = city;
+                        suggestionItem.classList.add("suggestion-item");
+                        suggestionItem.addEventListener("click", function() {
+                            cityInput.value = city;
+                            suggestionsBox.innerHTML = "";
+                        });
+                        suggestionsBox.appendChild(suggestionItem);
+                    });
+                }
+            });
+
+            document.addEventListener("click", function(e) {
+                if (e.target !== cityInput) {
+                    suggestionsBox.innerHTML = "";
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Weather App</h1>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Get Weather</button>
+        </form>
+
+        <div id="suggestions-box" class="suggestions-box"></div>
+
+        {% if error_message %}
+            <p class="error-message">{{ error_message }}</p>
+        {% endif %}
+
+        {% if weather_data %}
+            <div class="weather-info">
+                <h2>Weather in {{ weather_data.city }}</h2>
+                <div class="forecast">
+                    <div class="forecast-row">
+                        {% for day in weather_data.forecast|slice:":4" %}
+                            <div class="forecast-item">
+                                <p><strong>Date:</strong> {{ day.date }}</p>
+                                <p><strong>Max:</strong> {{ day.temperature_max }} °C</p>
+                                <p><strong>Min:</strong> {{ day.temperature_min }} °C</p>
+                                <p><strong>Precipitation:</strong> {{ day.precipitation }} mm</p>
+                                <p><strong>Wind Speed:</strong> {{ day.wind_speed }} km/h</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="forecast-row">
+                        {% for day in weather_data.forecast|slice:"4:" %}
+                            <div class="forecast-item">
+                                <p><strong>Date:</strong> {{ day.date }}</p>
+                                <p><strong>Max:</strong> {{ day.temperature_max }} °C</p>
+                                <p><strong>Min:</strong> {{ day.temperature_min }} °C</p>
+                                <p><strong>Precipitation:</strong> {{ day.precipitation }} mm</p>
+                                <p><strong>Wind Speed:</strong> {{ day.wind_speed }} km/h</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if last_city %}
+            <p class="last-city">Last searched city: {{ last_city }}</p>
+        {% endif %}
+    </div>
+</body>
+</html>
