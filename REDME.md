@@ -11,6 +11,9 @@
 * api для погоды: https://open-meteo.com/
 * DB: **SQLite3**(Django ORM)
 
+для запуска приложения:
+`python manage.py runserver 8000`
+
 для создания контейнера:
 `docker build -t simpleweather .`
 
